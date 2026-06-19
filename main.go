@@ -42,13 +42,15 @@ type Cho interface {
 	)
 }
 
-type InitResponse struct {
+type Handshake struct {
 	// calatrava and cho should be able to negotiate, but default would typically be 100ms
-	Interval int `json:"interval"`
-	Status   int `json:"status"`
+	Interval string `json:"interval"`
+	Status   int    `json:"status"`
+	Message  string `json:"message"`
+	Token    string `json:"token"`
 }
 
-func contactIngestor(ingestorAddr string, serviceName string, interval *time.Duration) (*InitResponse, error) {
+func contactIngestor(ingestorAddr string, serviceName string, interval *time.Duration) (*Handshake, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", ingestorAddr, nil)
 	if err != nil {
@@ -56,7 +58,11 @@ func contactIngestor(ingestorAddr string, serviceName string, interval *time.Dur
 	}
 
 	req.Header.Add("X-Service-Name", serviceName)
-	req.Header.Add("X-Interval", fmt.Sprintf("%+v", interval))
+
+	if interval != nil {
+		req.Header.Add("X-Interval", fmt.Sprintf("%s", interval.String()))
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 	res, err := client.Do(req)
 	if err != nil {
@@ -65,10 +71,10 @@ func contactIngestor(ingestorAddr string, serviceName string, interval *time.Dur
 
 	defer res.Body.Close()
 
-	var initRes InitResponse
+	var initRes Handshake
 	decoder := json.NewDecoder(res.Body)
 	if err := decoder.Decode(&initRes); err != nil {
-		return nil, fmt.Errorf("could not decode InitResponse from calatrava. Reason: %w", err)
+		return nil, fmt.Errorf("could not decode Handshake from calatrava. Reason: %w", err)
 	}
 
 	return &initRes, nil
@@ -84,6 +90,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Println("init with ingestor successfull. ", initRes)
+	log.Printf("init with ingestor successfull. %+v\n", initRes)
 }
 
