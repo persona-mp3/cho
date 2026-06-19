@@ -48,8 +48,8 @@ func initialHandshake(res http.ResponseWriter, req *http.Request) {
 	id := generateHash(serviceName)
 
 	mu.Lock()
+	defer mu.Unlock()
 	services[id] = Service{name: serviceName, interval: interval}
-	mu.Unlock()
 
 	response.Message = "OK"
 	response.Status = 200
@@ -67,8 +67,69 @@ func initialHandshake(res http.ResponseWriter, req *http.Request) {
 
 }
 
+type Message struct {
+	Message string `json:"message"`
+}
+
+func establish(res http.ResponseWriter, req *http.Request) {
+	flusher, ok := res.(http.Flusher)
+	if !ok {
+		res.Header().Set("Content-Type", "application/json")
+		res.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(res).Encode(Message{Message: "streaming not supported"})
+		return
+	}
+
+	token := req.Header.Get("X-Token")
+	if token == "" {
+		res.Header().Set("Content-Type", "application/json")
+		res.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(res).Encode(Message{Message: "missing token"})
+		return
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusOK)
+
+	enc := json.NewEncoder(res)
+	enc.Encode(Message{Message: "established"})
+	flusher.Flush()
+
+	// read what the client sends, respond to each message
+	dec := json.NewDecoder(req.Body)
+	defer req.Body.Close()
+
+	for dec.More() {
+		var msg Message
+		if err := dec.Decode(&msg); err != nil {
+			log.Printf("error: failed to decode client message: %v", err)
+			return
+		}
+		log.Printf("client [+] %s", msg.Message)
+
+		// respond to each message
+		if err := enc.Encode(Message{Message: "ack: " + msg.Message}); err != nil {
+			log.Printf("error: failed to write response: %v", err)
+			return
+		}
+		flusher.Flush()
+	}
+
+	log.Println("info: client stream ended")
+}
+
+// func establish(res http.ResponseWriter, req *http.Request) {
+// 	log.Println("do you know who else want's to establish a connection w calatrava?")
+// 	m := Message{Message: "testing"}
+// 	res.WriteHeader(300)
+// 	enc := json.NewEncoder(res)
+// 	enc.Encode(m)
+// 	log.Println("wooo")
+// }
+
 func main() {
 	http.HandleFunc("/", initialHandshake)
+	http.HandleFunc("/establish", establish)
 
 	addr := "localhost:9082"
 	log.Println("starting server at http://", addr)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -26,20 +25,7 @@ type Config struct {
 
 	// interval delay for sending logs to ingestor. Server and client can neogotiate or
 	// use a default
-	interval int
-
-	// port cho should listen on
-	port int
-}
-
-type Cho interface {
-	Start(
-		ctx context.Context,
-		addr string,
-		logSource string,
-		ingestorAddr string,
-		interval time.Duration,
-	)
+	interval time.Duration
 }
 
 type Handshake struct {
@@ -81,6 +67,12 @@ func contactIngestor(ingestorAddr string, serviceName string, interval *time.Dur
 }
 
 func main() {
+	cfg := &Config{
+		logSource:    "./garbage-collection-logs.txt",
+		ingestorAddr: "http://localhost:9082",
+		interval:     0,
+	}
+
 	ingestor := "http://localhost:9082"
 	serviceName := "jkvs-cho"
 
@@ -90,6 +82,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Printf("init with ingestor successfull. %+v\n", initRes)
-}
+	if initRes.Status != 200 {
+		log.Println(initRes.Message)
+		os.Exit(0)
+	}
 
+	log.Printf("init with ingestor successfull. %s, %s, %+v\n", initRes.Interval, initRes.Message, initRes.Status)
+	collector, err := cfg.createCollector(initRes.Token)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+
+	establishEndpoint := fmt.Sprintf("%s/establish", cfg.ingestorAddr)
+	conn, err := collector.EstablishConnection(establishEndpoint)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	conn.Send([]byte("i am tired of ju and jur son\n"))
+	conn.Send([]byte("spinning around in circles"))
+
+	fmt.Printf("collector     %+v\n", collector)
+}
