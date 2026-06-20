@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
+	// "os/signal"
 
 	"github.com/fsnotify/fsnotify"
 )
 
-// According to the docs, directories should be watched instead of
-// particular files.
-func watch(ctx context.Context, dir, logSource string, signal chan any) error {
+// According to the docs, directories should be watched instead of particular files.
+// If the dir isn't a directory, a watcher error occured, or the  logSource doesn't exist, an error is returned,
+func watch(ctx context.Context, dir, logSource string, signal chan struct{}) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -37,16 +37,20 @@ func watch(ctx context.Context, dir, logSource string, signal chan any) error {
 		}
 	}()
 
+	log.Println("watcher started....")
+	log.Println("target_dir: ", dir)
+	log.Println("logSource: ", logSource)
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 
 		case evt := <-watcher.Events:
-			// TODO: A write event could mean a write in progress, so we'd want a delayed way of knowing
-			if evt.Has(fsnotify.Write) && evt.Name == logSource {
-				log.Printf("%s [+] has new write\n", logSource)
-				signal <- struct{}{}
+			if evt.Has(fsnotify.Write) {
+				if evt.Name == logSource {
+					log.Printf("%s [+] \n", logSource)
+					signal <- struct{}{}
+				}
 			}
 
 		case err := <-watcher.Errors:
@@ -58,28 +62,29 @@ func watch(ctx context.Context, dir, logSource string, signal chan any) error {
 
 }
 
-func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Kill)
-	defer cancel()
-	if len(os.Args) < 3 {
-		log.Fatal("notify <path/to/watch> <target-file>")
-	}
-
-	event := make(chan any)
-	dir := os.Args[1]
-	logSource := os.Args[2]
-
-
-	go func() {
-		defer close(event)
-		if err := watch(ctx, dir, logSource, event); err != nil {
-			log.Println(err)
-		}
-	}()
-
-	i := 0
-	for evt := range event {
-		i++
-		fmt.Println("number of mods made to file: ", i , evt)
-	}
-}
+//
+//
+// func main() {
+// 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+// 	defer cancel()
+// 	if len(os.Args) < 3 {
+// 		log.Fatal("notify <path/to/watch> <target-file>")
+// 	}
+//
+// 	event := make(chan struct{})
+// 	dir := os.Args[1]
+// 	logSource := os.Args[2]
+//
+// 	go func() {
+// 		defer close(event)
+// 		if err := watch(ctx, dir, logSource, event); err != nil {
+// 			log.Println(err)
+// 		}
+// 	}()
+//
+// 	i := 0
+// 	for evt := range event {
+// 		i++
+// 		fmt.Println("number of mods made to file: ", i, evt)
+// 	}
+// }
