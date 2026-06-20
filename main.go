@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+
 type Log struct {
 	Level       string
 	ServiceName string
@@ -43,7 +44,7 @@ func main() {
 		// used as test-logs for now
 		logSource:    "./logs/test_logs.txt",
 		ingestorAddr: "http://localhost:9082",
-		interval:     0,
+		interval:     time.Millisecond * 500,
 	}
 
 	token := "random_token"

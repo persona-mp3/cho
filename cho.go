@@ -9,12 +9,18 @@ import (
 	"time"
 )
 
+var (
+	LogThreshold    = 10
+	DefaultInterval = 500 * time.Millisecond
+)
+
 type Cho struct {
 	// Provided by calatrava after initialising handshake. This will
 	// be used for subsequent requests instead of the service name
 	token string
 
 	tailedLogs   []Log
+	mockLogs     []string
 	ingestorAddr string
 
 	// File is opened for readOnly access
@@ -36,6 +42,7 @@ func (cfg *Config) createCollector(token string) (*Cho, error) {
 	return &Cho{
 		token:        token,
 		tailedLogs:   []Log{},
+		mockLogs:     []string{},
 		ingestorAddr: cfg.ingestorAddr,
 		source:       sourceFile,
 		interval:     cfg.interval,
@@ -50,7 +57,7 @@ func (cho *Cho) tailLog(parentCtx context.Context) error {
 	defer cho.cleanUp()
 
 	logDir := filepath.Dir(abs)
-	notification := make(chan struct{})
+	notification := make(chan struct{}, 100)
 
 	ctx, cancel := context.WithCancel(parentCtx)
 	defer cancel()
@@ -72,27 +79,34 @@ func (cho *Cho) tailLog(parentCtx context.Context) error {
 	}
 
 	fileSize := fileInfo.Size()
-
 	log.Println("originalFileSize: ", fileSize)
 
+	ticker := time.NewTicker(cho.interval)
+	defer ticker.Stop()
+
 	for {
+		select {
+		case <-ticker.C:
+			if len(cho.mockLogs) < LogThreshold {
+				continue
+			}
+			cho.publishLogs()
+			cho.mockLogs = []string{}
+		default:
+		}
+
 		select {
 		case <-parentCtx.Done():
 			return nil
 		case <-notification:
-			if err != nil {
-				return fmt.Errorf("error occured while tailing file. %w", err)
-			}
-			log.Println(" > write event occured")
 			newSize, content, err := cho.readLastLog(fileSize)
 			if err != nil {
 				return fmt.Errorf("could not read last log. %w", err)
 			}
 
 			fileSize = newSize
-
-			fmt.Println("lastLog -> ", string(content))
-
+			cho.mockLogs = append(cho.mockLogs, string(content))
+		default:
 		}
 	}
 
@@ -100,4 +114,10 @@ func (cho *Cho) tailLog(parentCtx context.Context) error {
 
 func (cho *Cho) cleanUp() {
 	cho.source.Close()
+}
+
+func (cho *Cho) publishLogs() {
+	for _, log := range cho.mockLogs {
+		fmt.Println(log)
+	}
 }
