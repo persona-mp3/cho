@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -35,23 +36,6 @@ func (cfg *Config) createCollector(token string) (*Cho, error) {
 	}, nil
 }
 
-// Used to persist long-lived sessions with calatrava. This allows the underlying tcp-connection
-// passed around in a streaming way. The connection is tied to the lifetime to the request via
-// the context. The flusher, flushes
-type Conn struct {
+func (cho *Cho) tailLog(ctx context.Context, send chan any) {
 }
-
-// EstablishConnection creates a new httpRequest to the server provided
-// in the establishEndpoint. The connection returned should be able to be
-// written to on demand. It's not expected that the server sends messages
-// except from closing the connection or minor event changes.
-func (c *Cho) EstablishConnection(establishEndpoint string) (*Conn, error) {
-	log.Println("establishing keep-alive connection with server")
-	return &Conn{}, nil
-}
-
-func (c *Conn) Send(data []byte) error {
-	return nil
-}
-
 
