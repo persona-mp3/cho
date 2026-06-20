@@ -36,7 +36,7 @@ type Cho struct {
 // the log file and eventually send to the ingestor.
 // The token provided is from the Handshake response from the ingestor
 func (cfg *Config) createCollector(token string) (*Cho, error) {
-	sourceFile, err := os.OpenFile(cfg.logSource, os.O_RDWR, 0600)
+	sourceFile, err := os.OpenFile(cfg.LogSource, os.O_RDWR, 0600)
 	if err != nil {
 		return nil, fmt.Errorf("could not open logSource. Reason: %w", err)
 	}
@@ -45,9 +45,9 @@ func (cfg *Config) createCollector(token string) (*Cho, error) {
 		token:        token,
 		tailedLogs:   []Log{},
 		mockLogs:     []string{},
-		ingestorAddr: cfg.ingestorAddr,
+		ingestorAddr: cfg.IngestorAddr,
 		source:       sourceFile,
-		interval:     cfg.interval,
+		interval:     cfg.Interval,
 	}, nil
 }
 
