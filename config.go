@@ -21,12 +21,12 @@ type Config struct {
 	// use a default
 	Interval time.Duration
 
-	Threshold int
+	LogThreshold int
 }
 
 func (cfg *Config) String() string {
 	return fmt.Sprintf("Config: {name: %s, logSource: %s ingestorAddr: %s, interval: %+v, threshold: %d}",
-		cfg.Name, cfg.LogSource, cfg.IngestorAddr, cfg.Interval.String(), cfg.Threshold,
+		cfg.Name, cfg.LogSource, cfg.IngestorAddr, cfg.Interval.String(), cfg.LogThreshold,
 	)
 }
 
@@ -44,6 +44,8 @@ func parseConfig(configFile string) (*Config, error) {
 		return nil, fmt.Errorf("could not decode toml file. Reason: %w", err)
 	}
 
+	LogThreshold = cfg.LogThreshold
+
 	_ = data
 	return cfg, nil
 }
@@ -55,5 +57,6 @@ func defaultConfig() *Config {
 		LogSource:    "./logs/test_logs.txt",
 		IngestorAddr: "http://localhost:9082",
 		Interval:     time.Millisecond * 500,
+		LogThreshold: LogThreshold,
 	}
 }

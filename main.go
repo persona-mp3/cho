@@ -51,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Println("serviceName:", cfg.Name)
+	log.Println("config: ", cfg.String())
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGKILL)
 	defer cancel()
 

@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	LogThreshold    = 10
+	LogThreshold    = 100
 	DefaultInterval = 500 * time.Millisecond
 )
 
