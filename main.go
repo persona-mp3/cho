@@ -26,12 +26,6 @@ type Handshake struct {
 }
 
 func main() {
-	// cfg := &Config{
-	// 	// used as test-logs for now
-	// 	logSource:    "./logs/test_logs.txt",
-	// 	ingestorAddr: "http://localhost:9082",
-	// 	interval:     time.Millisecond * 500,
-	// }
 
 	var err error
 	var tomlConfig string
@@ -57,6 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	log.Println("serviceName:", cfg.Name)
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGKILL)
 	defer cancel()
 

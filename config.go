@@ -31,20 +31,21 @@ func (cfg *Config) String() string {
 }
 
 func parseConfig(configFile string) (*Config, error) {
+	cfg := defaultConfig()
+
 	content, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg := Config{}
 
-	data, err := toml.Decode(string(content), &cfg)
+	data, err := toml.Decode(string(content), cfg)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode toml file. Reason: %w", err)
 	}
 
 	_ = data
-	return &cfg, nil
+	return cfg, nil
 }
 
 func defaultConfig() *Config {
