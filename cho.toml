@@ -3,7 +3,8 @@
 name = "cho"
 
 # Cho will tail this file and send the logs to calatrva. This can be the path to 
-# any file your application logs to
+# any file your application logs to. If you have no logs to point to, run the
+# `log_gen.sh` script
 logSource = "./logs/test_logs.txt"
 
 # Address calatrava is running on
