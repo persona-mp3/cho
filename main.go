@@ -2,33 +2,19 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 )
-
 
 type Log struct {
 	Level       string
 	ServiceName string
 	Diagnostics string
 	Timestamp   string
-}
-
-type Config struct {
-	// Where cho should tail logs from. Since we're using fsnotify to tail
-	// the logSource
-	logSource string
-
-	// Ingestor http address
-	ingestorAddr string
-
-	// interval delay for sending logs to ingestor. Server and client can neogotiate or
-	// use a default
-	interval time.Duration
 }
 
 type Handshake struct {
@@ -40,11 +26,28 @@ type Handshake struct {
 }
 
 func main() {
-	cfg := &Config{
-		// used as test-logs for now
-		logSource:    "./logs/test_logs.txt",
-		ingestorAddr: "http://localhost:9082",
-		interval:     time.Millisecond * 500,
+	// cfg := &Config{
+	// 	// used as test-logs for now
+	// 	logSource:    "./logs/test_logs.txt",
+	// 	ingestorAddr: "http://localhost:9082",
+	// 	interval:     time.Millisecond * 500,
+	// }
+
+	var err error
+	var tomlConfig string
+	flag.StringVar(&tomlConfig, "config", "default", "path to toml config file. Uses default configs otherwise")
+	flag.Parse()
+
+	cfg := &Config{}
+
+	if tomlConfig == "default" {
+		log.Println("using default config")
+		cfg = defaultConfig()
+	} else {
+		cfg, err = parseConfig(tomlConfig)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	token := "random_token"
