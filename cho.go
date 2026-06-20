@@ -1,18 +1,26 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 )
 
 type Cho struct {
+	// Provided by calatrava after initialising handshake. This will 
+	// be used for subsequent requests instead of the service name
 	token        string
+
 	tailedLogs   []Log
 	ingestorAddr string
+
 	// File is opened for readOnly access
 	source   *os.File
+
+	// interval for sending out logs to calatrava
 	interval time.Duration
 }
 
@@ -20,8 +28,7 @@ type Cho struct {
 // the log file and eventually send to the ingestor.
 // The token provided is from the Handshake response from the ingestor
 func (cfg *Config) createCollector(token string) (*Cho, error) {
-	// check if src file exists
-	source, err := os.Open(cfg.logSource)
+	sourceFile, err := os.Open(cfg.logSource)
 	if err != nil {
 		return nil, fmt.Errorf("could not open logSource. Reason: %w", err)
 	}
@@ -30,28 +37,46 @@ func (cfg *Config) createCollector(token string) (*Cho, error) {
 		token:        token,
 		tailedLogs:   []Log{},
 		ingestorAddr: cfg.ingestorAddr,
-		source:       source,
+		source:       sourceFile,
 		interval:     cfg.interval,
 	}, nil
 }
 
-// Used to persist long-lived sessions with calatrava. This allows the underlying tcp-connection
-// passed around in a streaming way. The connection is tied to the lifetime to the request via
-// the context. The flusher, flushes
-type Conn struct {
+func (cho *Cho) tailLog(parentCtx context.Context) error {
+	abs, err := filepath.Abs(cho.source.Name())
+	if err != nil {
+		return err
+	}
+	defer cho.cleanUp()
+
+	logDir := filepath.Dir(abs)
+	notification := make(chan struct{})
+
+	ctx, cancel := context.WithCancel(parentCtx)
+	defer cancel()
+
+	go func() {
+		defer close(notification)
+		if err := watch(ctx, logDir, abs, notification); err != nil {
+			log.Fatal(err)
+			return
+		}
+	}()
+
+	log.Println("tailer started....")
+	log.Println()
+
+	for {
+		select {
+		case <-parentCtx.Done():
+			return nil
+		case <-notification:
+			log.Println(" > write event occured")
+		}
+	}
+
 }
 
-// EstablishConnection creates a new httpRequest to the server provided
-// in the establishEndpoint. The connection returned should be able to be
-// written to on demand. It's not expected that the server sends messages
-// except from closing the connection or minor event changes.
-func (c *Cho) EstablishConnection(establishEndpoint string) (*Conn, error) {
-	log.Println("establishing keep-alive connection with server")
-	return &Conn{}, nil
+func (cho *Cho) cleanUp() {
+	cho.source.Close()
 }
-
-func (c *Conn) Send(data []byte) error {
-	return nil
-}
-
-

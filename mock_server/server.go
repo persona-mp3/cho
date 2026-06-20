@@ -125,6 +125,8 @@ func establish(res http.ResponseWriter, req *http.Request) {
 // 	enc := json.NewEncoder(res)
 // 	enc.Encode(m)
 // 	log.Println("wooo")
+// does this trigger it
+//// yeshuh ski
 // }
 
 func main() {
