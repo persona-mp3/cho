@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	LogDir  = "./logs"
-	LogDest = "./logs/structured_logs.txt"
+	LogDir          = "./logs"
+	LogDest         = "./logs/structured_logs.txt"
+	DefaultDuration = 530 * time.Millisecond
 )
 
 type Log struct {
@@ -40,8 +41,7 @@ func (l *Log) String() string {
 
 func main() {
 
-
-	if err := os.MkdirAll(LogDir, 0666); err != nil {
+	if err := os.MkdirAll(LogDir, 0777); err != nil {
 		if !errors.Is(err, os.ErrExist) {
 			log.Fatalf("could not create %s. Reason: %s\n", LogDir, err)
 		}
@@ -73,7 +73,7 @@ func main() {
 	handler := slog.NewJSONHandler(file, opts)
 	logger := slog.New(handler)
 
-	ticker := time.NewTicker(130 * time.Millisecond)
+	ticker := time.NewTicker(DefaultDuration)
 	defer ticker.Stop()
 
 	for {

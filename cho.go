@@ -12,26 +12,34 @@ import (
 	"time"
 )
 
+type Log struct {
+	Timestamp   string
+	Level       string
+	Source      string
+	ServiceName string
+	Diagnostics string
+}
+
 type Cho struct {
 	// Provided by calatrava after initialising handshake. This will
 	// be used for subsequent requests instead of the service name
 	token string
 
-	tailedLogs   []Log
-	rawLogs      []string
+	tailedLogs []Log
+	rawLogs    []string
 
-	// IPAddr and port of where a calatrava instance server is listening
+	// HTTP address of calatrava instance running
 	ingestorAddr string
 
-	// File is opened for readOnly access
+	// source is the file opened for read only access for cho to tail
 	source *os.File
 
-	// interval for sending out logs to calatrava. If [logThreshold] has been set, cho 
+	// interval for sending out logs to calatrava. If [logThreshold] has been set, cho
 	// will no longer send logs during this [interval] but will batch them when the [tailedLogs]
 	// have reach the [logThreshold]
 	interval time.Duration
 
-	// logThreshold is the amount of logs to be held before logs are sent over to calatrava. If 
+	// logThreshold is the amount of logs to be held before logs are sent over to calatrava. If
 	logThreshold int
 }
 
@@ -93,7 +101,7 @@ func (cho *Cho) tailLog(parentCtx context.Context) error {
 	for {
 		select {
 		case <-ticker.C:
-			if len(cho.rawLogs) < LogThreshold {
+			if len(cho.rawLogs) < cho.logThreshold {
 				continue
 			}
 
@@ -120,7 +128,10 @@ func (cho *Cho) tailLog(parentCtx context.Context) error {
 
 			fileSize = newSize
 
-			cho.rawLogs = append(cho.rawLogs, string(content))
+			if content != nil {
+				cho.rawLogs = append(cho.rawLogs, string(content))
+			}
+
 		default:
 		}
 	}
@@ -138,7 +149,15 @@ func (c *Cho) readLastLog(originalFileSize int64) (int64, []byte, error) {
 
 	newFileSize := fileInfo.Size()
 
+	if newFileSize == 0 {
+		log.Printf("warn: logFile has been truncated. Returned size of %d\n", newFileSize)
+		return 0, nil, nil
+	}
+
 	bytesWritten := newFileSize - originalFileSize
+
+	log.Printf("debug:: bufferSize:%d, ,originalSize: %d, newSize: %d, bytesWritten: %d\n",
+		bytesWritten, originalFileSize, newFileSize, bytesWritten)
 
 	buffer := make([]byte, bytesWritten)
 	n, err := c.source.ReadAt(buffer, originalFileSize)

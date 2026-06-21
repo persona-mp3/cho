@@ -48,7 +48,7 @@ func watch(ctx context.Context, dir, logSource string, signal chan struct{}) err
 		case evt := <-watcher.Events:
 			if evt.Has(fsnotify.Write) {
 				if evt.Name == logSource {
-					log.Printf("%s [+] \n", logSource)
+					log.Printf("[+] %s\n", logSource)
 					signal <- struct{}{}
 				}
 			}
@@ -61,30 +61,3 @@ func watch(ctx context.Context, dir, logSource string, signal chan struct{}) err
 	}
 
 }
-
-//
-//
-// func main() {
-// 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-// 	defer cancel()
-// 	if len(os.Args) < 3 {
-// 		log.Fatal("notify <path/to/watch> <target-file>")
-// 	}
-//
-// 	event := make(chan struct{})
-// 	dir := os.Args[1]
-// 	logSource := os.Args[2]
-//
-// 	go func() {
-// 		defer close(event)
-// 		if err := watch(ctx, dir, logSource, event); err != nil {
-// 			log.Println(err)
-// 		}
-// 	}()
-//
-// 	i := 0
-// 	for evt := range event {
-// 		i++
-// 		fmt.Println("number of mods made to file: ", i, evt)
-// 	}
-// }

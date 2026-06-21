@@ -12,7 +12,7 @@ ingestorAddr = "http://localhost:9090"
 
 # Interval at which cho will send logs to calatrava Miliseconds - ms. If a __logThreshold__ has been 
 # set, logs will only be sent over to calatrava when the threshold provided has been met. 
-interval = "10ms"
+interval = "5s"
 
 # Minimum number of logs before cho sends to calatrava. If the threshold is set to 0, every log that gets 
 # created withing __interval__ is sent to calatrava

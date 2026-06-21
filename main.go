@@ -10,12 +10,6 @@ import (
 	"syscall"
 )
 
-type Log struct {
-	Level       string
-	ServiceName string
-	Diagnostics string
-	Timestamp   string
-}
 
 type Handshake struct {
 	// calatrava and cho should be able to negotiate, but default would typically be 100ms
