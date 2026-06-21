@@ -109,7 +109,7 @@ watch -n 1 ./tools/log_gen.sh
   "level": "ERROR",
   "source": {
     "function": "main.main",
-    "file": "/home/james/dev/cho/tools/log.go",
+    "file": "/home/daniel/dev/cho/tools/log.go",
     "line": 85
   },
   "diagnostics": "Generating random logs"
