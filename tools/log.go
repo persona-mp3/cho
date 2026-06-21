@@ -82,7 +82,7 @@ func main() {
 			return
 		case <-ticker.C:
 			l := Log{Diagnostics: "Generating random logs"}
-			logger.Info(l.String())
+			logger.Error(l.String())
 		}
 
 	}

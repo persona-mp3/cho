@@ -12,14 +12,6 @@ import (
 	"time"
 )
 
-type Log struct {
-	Timestamp   string
-	Level       string
-	Source      string
-	ServiceName string
-	Diagnostics string
-}
-
 type Cho struct {
 	// Provided by calatrava after initialising handshake. This will
 	// be used for subsequent requests instead of the service name
@@ -156,9 +148,6 @@ func (c *Cho) readLastLog(originalFileSize int64) (int64, []byte, error) {
 
 	bytesWritten := newFileSize - originalFileSize
 
-	log.Printf("debug:: bufferSize:%d, ,originalSize: %d, newSize: %d, bytesWritten: %d\n",
-		bytesWritten, originalFileSize, newFileSize, bytesWritten)
-
 	buffer := make([]byte, bytesWritten)
 	n, err := c.source.ReadAt(buffer, originalFileSize)
 	_ = n
@@ -169,22 +158,35 @@ func (c *Cho) readLastLog(originalFileSize int64) (int64, []byte, error) {
 	return newFileSize, buffer, nil
 }
 
-func parseLogs(logs []string) ([]Log, error) {
+func parseLogs(logs []string) ([]*Log, error) {
+	parsedLogs := []*Log{}
+
 	for _, line := range logs {
 		for entry := range strings.SplitSeq(line, "\n") {
-			log.Println(entry)
+			if len(strings.TrimSpace(entry)) == 0 {
+				continue
+			}
+
+			parsedLog, err := JSONParser(entry)
+			if err != nil {
+				log.Printf("could not parse log: %s. Reason: %s\n", entry, err)
+				continue
+			}
+
+			log.Println("logEntry:", entry)
+			log.Println(parsedLog.String())
+			parsedLogs = append(parsedLogs, parsedLog)
+
 		}
 	}
 
-	return nil, nil
+	return parsedLogs, nil
 }
 
 func (cho *Cho) publishLogs() {
-	// for _, log := range cho.parseLogs {
-	// 	fmt.Println(log)
-	// }
 }
 
 func (cho *Cho) cleanUp() {
 	cho.source.Close()
+	log.Println("closed source file")
 }

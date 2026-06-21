@@ -16,5 +16,5 @@ interval = "5s"
 
 # Minimum number of logs before cho sends to calatrava. If the threshold is set to 0, every log that gets 
 # created withing __interval__ is sent to calatrava
-logThreshold = 100
+logThreshold = 5
 
