@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	LogThreshold    = 100
+	DefaultLogThreshold    = 100
 	DefaultInterval = 500 * time.Millisecond
 )
 
@@ -59,6 +59,6 @@ func defaultConfig() *Config {
 		LogSource:    "./logs/test_logs.txt",
 		IngestorAddr: "http://localhost:9082",
 		Interval:     DefaultInterval,
-		LogThreshold: LogThreshold,
+		LogThreshold: DefaultLogThreshold,
 	}
 }

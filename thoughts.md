@@ -1,3 +1,4 @@
+### captured_thoughts.md
 SO for example, these are ways I plan on designing such
 
 1. Collecting logs over http. For example, the application does some kind of async logging

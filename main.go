@@ -11,14 +11,6 @@ import (
 )
 
 
-type Handshake struct {
-	// calatrava and cho should be able to negotiate, but default would typically be 100ms
-	Interval string `json:"interval"`
-	Status   int    `json:"status"`
-	Message  string `json:"message"`
-	Token    string `json:"token"`
-}
-
 func main() {
 	var err error
 	var tomlConfig string

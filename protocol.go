@@ -1,4 +1,5 @@
 package main
+
 import (
 	"encoding/json"
 	"fmt"
@@ -6,6 +7,13 @@ import (
 	"net/http"
 	"time"
 )
+
+type Handshake struct {
+	Interval string `json:"interval"`
+	Status   int    `json:"status"`
+	Message  string `json:"message"`
+	Token    string `json:"token"`
+}
 
 func contactIngestor(ingestorAddr string, serviceName string, interval *time.Duration) (*Handshake, error) {
 	client := &http.Client{}
