@@ -8,12 +8,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
-)
-
-var (
-	LogThreshold    = 100
-	DefaultInterval = 500 * time.Millisecond
 )
 
 type Cho struct {
@@ -22,14 +18,21 @@ type Cho struct {
 	token string
 
 	tailedLogs   []Log
-	mockLogs     []string
+	rawLogs      []string
+
+	// IPAddr and port of where a calatrava instance server is listening
 	ingestorAddr string
 
 	// File is opened for readOnly access
 	source *os.File
 
-	// interval for sending out logs to calatrava
+	// interval for sending out logs to calatrava. If [logThreshold] has been set, cho 
+	// will no longer send logs during this [interval] but will batch them when the [tailedLogs]
+	// have reach the [logThreshold]
 	interval time.Duration
+
+	// logThreshold is the amount of logs to be held before logs are sent over to calatrava. If 
+	logThreshold int
 }
 
 // A new collector is returned that will can be used to tail
@@ -44,10 +47,11 @@ func (cfg *Config) createCollector(token string) (*Cho, error) {
 	return &Cho{
 		token:        token,
 		tailedLogs:   []Log{},
-		mockLogs:     []string{},
+		rawLogs:      []string{},
 		ingestorAddr: cfg.IngestorAddr,
 		source:       sourceFile,
 		interval:     cfg.Interval,
+		logThreshold: cfg.LogThreshold,
 	}, nil
 }
 
@@ -89,11 +93,19 @@ func (cho *Cho) tailLog(parentCtx context.Context) error {
 	for {
 		select {
 		case <-ticker.C:
-			if len(cho.mockLogs) < LogThreshold {
+			if len(cho.rawLogs) < LogThreshold {
 				continue
 			}
+
+			logs, err := parseLogs(cho.rawLogs)
+			if err != nil {
+				log.Println("failed to parse logs: ", err)
+				continue
+			}
+			_ = logs
+
 			cho.publishLogs()
-			cho.mockLogs = []string{}
+			cho.rawLogs = []string{}
 		default:
 		}
 
@@ -107,13 +119,13 @@ func (cho *Cho) tailLog(parentCtx context.Context) error {
 			}
 
 			fileSize = newSize
-			cho.mockLogs = append(cho.mockLogs, string(content))
+
+			cho.rawLogs = append(cho.rawLogs, string(content))
 		default:
 		}
 	}
 
 }
-
 
 // readLastLog reads the latest appended log by evaluating the number of bytes written
 // It returns the newFileSize, the contents written and an error if [Stat] call failed, or
@@ -131,21 +143,29 @@ func (c *Cho) readLastLog(originalFileSize int64) (int64, []byte, error) {
 	buffer := make([]byte, bytesWritten)
 	n, err := c.source.ReadAt(buffer, originalFileSize)
 	_ = n
-	if err != nil && !errors.Is(err, io.EOF){
+	if err != nil && !errors.Is(err, io.EOF) {
 		return 0, nil, err
 	}
 
 	return newFileSize, buffer, nil
 }
 
-func (cho *Cho) publishLogs() {
-	for _, log := range cho.mockLogs {
-		fmt.Println(log)
+func parseLogs(logs []string) ([]Log, error) {
+	for _, line := range logs {
+		for entry := range strings.SplitSeq(line, "\n") {
+			log.Println(entry)
+		}
 	}
+
+	return nil, nil
 }
 
+func (cho *Cho) publishLogs() {
+	// for _, log := range cho.parseLogs {
+	// 	fmt.Println(log)
+	// }
+}
 
 func (cho *Cho) cleanUp() {
 	cho.source.Close()
 }
-

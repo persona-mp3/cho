@@ -8,6 +8,11 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+var (
+	LogThreshold    = 100
+	DefaultInterval = 500 * time.Millisecond
+)
+
 type Config struct {
 	Name string
 	// Where cho should tail logs from. Since we're using fsnotify to tail
@@ -38,13 +43,10 @@ func parseConfig(configFile string) (*Config, error) {
 		return nil, err
 	}
 
-
 	data, err := toml.Decode(string(content), cfg)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode toml file. Reason: %w", err)
 	}
-
-	LogThreshold = cfg.LogThreshold
 
 	_ = data
 	return cfg, nil
@@ -56,7 +58,7 @@ func defaultConfig() *Config {
 		Name:         "cho",
 		LogSource:    "./logs/test_logs.txt",
 		IngestorAddr: "http://localhost:9082",
-		Interval:     time.Millisecond * 500,
+		Interval:     DefaultInterval,
 		LogThreshold: LogThreshold,
 	}
 }

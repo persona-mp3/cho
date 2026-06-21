@@ -5,14 +5,16 @@ name = "persona-mp3-cho"
 # Cho will tail this file and send the logs to calatrva. This can be the path to 
 # any file your application logs to. If you have no logs to point to, run the
 # `log_gen.sh` script
-logSource = "./logs/test_logs.txt"
+logSource = "./logs/structured_logs.txt"
 
 # Address calatrava is running on
 ingestorAddr = "http://localhost:9090"
 
-# Interval at which cho will send logs to calatrava Miliseconds - ms 
-interval = "900ms"
+# Interval at which cho will send logs to calatrava Miliseconds - ms. If a __logThreshold__ has been 
+# set, logs will only be sent over to calatrava when the threshold provided has been met. 
+interval = "10ms"
 
-# Minimum number of logs before cho sends to calatrava
+# Minimum number of logs before cho sends to calatrava. If the threshold is set to 0, every log that gets 
+# created withing __interval__ is sent to calatrava
 logThreshold = 100
 
