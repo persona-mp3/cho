@@ -24,3 +24,5 @@ logThreshold = 5
 # 2. Deduplicating logs
 # 3. Telling cho what log levels you're interested ie if ERROR only error levels will be collected
 # 4. Handle different applications with different ingestors
+# 5. Buffered logs if ingestor is down
+# 6. Hot-reload
