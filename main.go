@@ -20,9 +20,9 @@ type Handshake struct {
 }
 
 func main() {
-
 	var err error
 	var tomlConfig string
+
 	flag.StringVar(&tomlConfig, "config", "default", "path to toml config file. Uses default configs otherwise")
 	flag.Parse()
 
